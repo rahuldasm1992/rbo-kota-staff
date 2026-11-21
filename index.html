@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RBO Kota - Staff Directory</title>
+<style>
+  :root{
+    --navy:#0d2340;
+    --navy-light:#123a63;
+    --gold:#c9a24b;
+    --bg:#eef1f5;
+    --card:#ffffff;
+    --text:#1b2432;
+    --muted:#5b6675;
+    --green:#1e8e5a;
+    --border:#dbe1ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+
+  /* ---------- Password Overlay ---------- */
+  #lock-overlay{
+    position:fixed; inset:0;
+    background:linear-gradient(160deg,var(--navy) 0%,var(--navy-light) 100%);
+    display:flex; align-items:center; justify-content:center;
+    z-index:9999;
+    padding:20px;
+  }
+  .lock-box{
+    background:var(--card);
+    border-radius:14px;
+    padding:36px 30px;
+    width:100%;
+    max-width:360px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  }
+  .lock-box .badge{
+    width:56px;height:56px;border-radius:50%;
+    background:var(--navy);
+    color:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px auto;
+    font-size:26px;
+  }
+  .lock-box h2{
+    margin:0 0 4px 0;
+    font-size:19px;
+    color:var(--navy);
+  }
+  .lock-box p{
+    margin:0 0 20px 0;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .lock-box input{
+    width:100%;
+    padding:12px 14px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:15px;
+    margin-bottom:12px;
+    text-align:center;
+    letter-spacing:1px;
+  }
+  .lock-box input:focus{
+    outline:none;
+    border-color:var(--navy);
+  }
+  .lock-box button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:var(--navy);
+    color:#fff;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .lock-box button:active{ background:var(--navy-light); }
+  #lock-error{
+    color:#c0392b;
+    font-size:13px;
+    margin-top:10px;
+    min-height:16px;
+  }
+
+  /* ---------- Main App ---------- */
+  #app{ display:none; padding-bottom:40px; }
+
+  header.top{
+    background:linear-gradient(120deg,var(--navy) 0%,var(--navy-light) 100%);
+    color:#fff;
+    padding:22px 18px 26px 18px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  header.top::before{
+    content:"";
+    position:absolute;
+    top:-40px; right:-40px;
+    width:160px;height:160px;
+    border-radius:50%;
+    background:rgba(201,162,75,0.15);
+  }
+  header.top::after{
+    content:"";
+    position:absolute;
+    bottom:-60px; left:-30px;
+    width:180px;height:180px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.05);
+  }
+  header.top h1{
+    margin:0;
+    font-size:22px;
+    letter-spacing:0.5px;
+    position:relative;
+  }
+  header.top .sub{
+    margin-top:6px;
+    font-size:12.5px;
+    color:var(--gold);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    position:relative;
+  }
+  header.top .tag{
+    margin-top:10px;
+    font-size:11px;
+    color:rgba(255,255,255,0.65);
+    position:relative;
+  }
+
+  .container{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+
+  .panel{
+    background:var(--card);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(13,35,64,0.06);
+    border:1px solid var(--border);
+  }
+  .panel h3{
+    margin:0 0 12px 0;
+    font-size:14px;
+    color:var(--navy);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel h3 .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--gold);
+    display:inline-block;
+  }
+
+  select, input[type="text"]{
+    width:100%;
+    padding:12px 12px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:15px;
+    background:#fafbfc;
+    color:var(--text);
+  }
+  select:focus, input[type="text"]:focus{
+    outline:none;
+    border-color:var(--navy-light);
+    background:#fff;
+  }
+
+  .search-row{
+    display:flex;
+    gap:8px;
+  }
+  .search-row input{ flex:1; }
+
+  .result-count{
+    margin:14px 2px 8px 2px;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+
+  .person-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 14px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    box-shadow:0 1px 4px rgba(13,35,64,0.05);
+  }
+  .person-info{ min-width:0; flex:1; }
+  .person-name{
+    font-size:15.5px;
+    font-weight:600;
+    color:var(--navy);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .person-desig{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .person-meta{
+    font-size:11.5px;
+    color:#8b95a3;
+    margin-top:4px;
+  }
+  .person-meta span{ margin-right:10px; }
+
+  .call-btn{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    background:var(--green);
+    color:#fff;
+    border:none;
+    border-radius:24px;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .call-btn.disabled{
+    background:#b7bec8;
+    pointer-events:none;
+  }
+  .call-btn svg{ width:15px; height:15px; }
+
+  .empty-state{
+    text-align:center;
+    color:var(--muted);
+    font-size:13.5px;
+    padding:30px 10px;
+  }
+
+  .branch-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:4px 2px 10px 2px;
+  }
+  .branch-title h2{
+    font-size:16px;
+    color:var(--navy);
+    margin:0;
+  }
+  .branch-title .bid{
+    font-size:11.5px;
+    color:#fff;
+    background:var(--navy);
+    padding:3px 10px;
+    border-radius:12px;
+  }
+
+  footer.foot{
+    text-align:center;
+    font-size:11.5px;
+    color:#9aa4b0;
+    padding:18px 10px 6px 10px;
+  }
+
+  @media (max-width:380px){
+    .call-btn{ padding:9px 12px; font-size:12px; }
+    .person-name{ font-size:14.5px; }
+  }
+
+  /* ---------- Pie chart + managers ---------- */
+  
+  .pie-row{ display:flex; align-items:center; gap:14px; }
+  .pie-row svg{ width:116px; height:116px; flex-shrink:0; }
+  .legend{ flex:1; min-width:0; font-size:12.5px; }
+  .legend div{ display:flex; align-items:center; gap:7px; padding:2.5px 0; }
+  .legend i{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .legend span.l{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+  .legend b{ color:var(--navy); }
+  .mgr-head{ display:flex; justify-content:space-between; align-items:center; margin:6px 2px 10px 2px; }
+  .mgr-head h3{ margin:0; }
+  .mgr-head .cnt{ font-size:11.5px; color:#fff; background:var(--navy); padding:3px 10px; border-radius:12px; }
+  .mgr-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .mgr-row:last-child{ border-bottom:none; }
+  .mi{ min-width:0; flex:1; }
+  .mb{ font-size:12px; font-weight:700; color:var(--navy); letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mn{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mp{ flex-shrink:0; background:var(--green); color:#fff; text-decoration:none; font-size:13px; font-weight:600; padding:8px 12px; border-radius:20px; }
+  .mp.off{ background:#b7bec8; }
+
+  /* ---------- RBO Department List button + popup ---------- */
+  .dept-btn{ width:100%; margin-top:12px; padding:13px; border:none; border-radius:8px; background:var(--navy); color:#fff; font-size:15px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .dept-btn:active{ background:var(--navy-light); }
+  .dept-btn .gd{ width:8px; height:8px; border-radius:50%; background:var(--gold); }
+  #deptModal{ position:fixed; inset:0; background:rgba(8,20,36,.6); display:none; align-items:center; justify-content:center; padding:12px; z-index:5000; }
+  #deptModal.open{ display:flex; }
+  .dept-box{ background:var(--card); width:100%; max-width:960px; max-height:88vh; max-height:88dvh; border-radius:14px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+  .dept-head{ background:linear-gradient(120deg,var(--navy),var(--navy-light)); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+  .dept-head h2{ margin:0; font-size:16px; flex:1; }
+  .dept-head button{ background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; }
+  .dept-tools{ padding:10px 14px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border); }
+  .dept-tools span{ font-size:12px; color:var(--muted); white-space:nowrap; }
+  .dept-scroll{ overflow:auto; flex:1; -webkit-overflow-scrolling:touch; }
+  .dept-scroll table{ border-collapse:collapse; width:100%; min-width:760px; font-size:13.5px; }
+  .dept-scroll th, .dept-scroll td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .dept-scroll th{ position:sticky; top:0; background:#e8edf4; color:var(--navy); z-index:1; font-size:12.5px; }
+  .dept-scroll td a{ color:var(--green); font-weight:600; text-decoration:none; }
+  .dept-none{ padding:30px; text-align:center; color:var(--muted); font-size:13.5px; }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD OVERLAY -->
+<div id="lock-overlay">
+  <div class="lock-box">
+    <div class="badge">&#128274;</div>
+    <h2>RBO Kota Staff Directory</h2>
+    <p>Enter password to continue</p>
+    <input type="password" id="lock-input" placeholder="Password" autocomplete="off">
+    <button onclick="checkPassword()">Unlock</button>
+    <div id="lock-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header class="top">
+    <h1>RBO KOTA STAFF DIRECTORY</h1>
+    <div class="sub">Branch Wise Contact List</div>
+    <div class="tag">Build by IT Department(RAHUL DAS M)</div>
+  </header>
+
+  <div class="container">
+
+    <div class="panel pie-panel" id="piePanel">
+      <h3><span class="dot"></span>Staff by Designation <span id="pieScope" style="margin-left:auto;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0"></span></h3>
+      <div class="pie-row" id="pieRow"></div>
+    </div>
+
+    <div class="panel">
+      <h3><span class="dot"></span>Select Branch</h3>
+      <select id="branchSelect" onchange="onBranchChange()">
+        <option value="">-- Select Branch --</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <h3><span class="dot"></span>Search by Name / ID No.</h3>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Type name or ID number..." oninput="onSearch()">
+      </div>
+    </div>
+
+    <button class="dept-btn" id="deptOpenBtn" type="button" onclick="openDeptList()"><span class="gd"></span>RBO Department List</button>
+
+    <div id="branchTitleWrap"></div>
+    <div class="result-count" id="resultCount"></div>
+
+    <div id="results"></div>
+
+    <div class="mgr-head" style="margin-top:22px;">
+      <h3 style="font-size:14px;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px;"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block"></span>Branch Managers &ndash; Quick Call</h3>
+      <span class="cnt" id="mgrCount"></span>
+    </div>
+    <div id="managers"></div>
+
+  </div>
+
+  <footer class="foot">RBO Kota &middot; Staff Directory &middot; Build by IT Department</footer>
+</div>
+
+<!-- RBO DEPARTMENT LIST POPUP -->
+<div id="deptModal" role="dialog" aria-modal="true" aria-labelledby="deptTitle">
+  <div class="dept-box">
+    <div class="dept-head"><h2 id="deptTitle">RBO Kota &ndash; Department Wise Staff List</h2><button type="button" onclick="closeDeptList()">Close</button></div>
+    <div class="dept-tools"><input type="text" id="deptFilter" placeholder="Filter by name, ID, department..." oninput="renderDeptTable()"><span id="deptCount"></span></div>
+    <div class="dept-scroll">
+      <table>
+        <thead><tr><th>S.N</th><th>ID</th><th>Name of Staff</th><th>Designation</th><th>Department</th><th>CUG No</th></tr></thead>
+        <tbody id="deptBody"></tbody>
+      </table>
+      <div class="dept-none" id="deptNone" style="display:none">No staff match your filter.</div>
+    </div>
+  </div>
+</div>
+
+<script id="staff-data" type="application/json">[{"branch_id":"934","branch":"RBO KOTA","id_no":"3152","name":"R K MEENA","designation":"REGIONAL MANAGER","grade":"OFFICER SCALE IV","phone":"9413237928"},{"branch_id":"934","branch":"RBO KOTA","id_no":"3427","name":"KESHAV KISHOR DADHICH","designation":"SENIOR MANAGER OPERATION","grade":"OFFICER SCALE III","phone":"7073454110"},{"branch_id":"934","branch":"RBO KOTA","id_no":"5597","name":"POOJA VERMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8955286733"},{"branch_id":"934","branch":"RBO KOTA","id_no":"5920","name":"AKSHAY MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9643017674"},{"branch_id":"934","branch":"RBO KOTA","id_no":"6323","name":"ADITYA MEHRA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9636258169"},{"branch_id":"934","branch":"RBO KOTA","id_no":"4585","name":"Naveen Sharma","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9079936431"},{"branch_id":"934","branch":"RBO KOTA","id_no":"7408","name":"NEERAJ DHAKA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9462932002"},{"branch_id":"934","branch":"RBO KOTA","id_no":"20116","name":"HEMANT KUMAR KILANIA","designation":"SENIOR MANAGER BUSINESS","grade":"OFFICER SCALE III","phone":"9414146555"},{"branch_id":"934","branch":"RBO KOTA","id_no":"20791","name":"ARUN KUMAR GUPTA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9889243877"},{"branch_id":"934","branch":"RBO KOTA","id_no":"20889","name":"ADITYA GOYAL","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9460261035"},{"branch_id":"934","branch":"RBO KOTA","id_no":"20931","name":"RAHUL DAS M","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9539634422"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21022","name":"ABHISHEK JAIN","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9929681279"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21205","name":"VARSHA MEHTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7891978314"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21244","name":"PANKAJ YADAV","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9779082776"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21335","name":"PRIYANKA CHAUDHARY","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9928463556"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21459","name":"ARNABH CHATTERJEE","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"6378415047"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21477","name":"ASHUTOSH GAUTAM","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8764039673"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21681","name":"GAURAV JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8562820560"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21776","name":"MANISH MEGHWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7014859471"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21820","name":"RAVI JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9713100815"},{"branch_id":"934","branch":"RBO KOTA","id_no":"22045","name":"HIMANSHU DHARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9057262056"},{"branch_id":"934","branch":"RBO KOTA","id_no":"22170","name":"SAROJ MEHTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9413733340"},{"branch_id":"934","branch":"RBO KOTA","id_no":"22372","name":"KULDEEP MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9799863990"},{"branch_id":"934","branch":"RBO KOTA","id_no":"23298","name":"RAKESH KUMAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9461276041"},{"branch_id":"934","branch":"RBO KOTA","id_no":"23749","name":"RAM BABU SHARMA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"8302625049"},{"branch_id":"934","branch":"RBO KOTA","id_no":"23805","name":"PRATHAM VERMA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"6378224931"},{"branch_id":"934","branch":"RBO KOTA","id_no":"23827","name":"PAPPU","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"7727006303"},{"branch_id":"934","branch":"RBO KOTA","id_no":"22515","name":"KUSHAL AGRAWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8875403030"},{"branch_id":"934","branch":"RBO KOTA","id_no":"25912","name":"KIRAN KUMAWAT","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9571552082"},{"branch_id":"934","branch":"RBO KOTA","id_no":"24641","name":"RUDRESH HEDA","designation":"CHARTERED ACCOUNTANT","grade":"OFFICER SCALE II","phone":"9468954276"},{"branch_id":"934","branch":"RBO KOTA","id_no":"20567","name":"LOKESH MAROTHIYA","designation":"MAM","grade":"OFFICER SCALE II","phone":"9413758509"},{"branch_id":"934","branch":"RBO KOTA","id_no":"21493","name":"LOVE KUMAR SHARMA","designation":"","grade":"OFFICER SCALE II","phone":"9216080393"},{"branch_id":"1174","branch":"HINDOLI","id_no":"7190","name":"ANISHA MINA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9352469960"},{"branch_id":"1174","branch":"HINDOLI","id_no":"20507","name":"MITHLESH MAHAWAR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7976868721"},{"branch_id":"1174","branch":"HINDOLI","id_no":"23580","name":"SAKSHI ARORA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8949353229"},{"branch_id":"1174","branch":"HINDOLI","id_no":"24107","name":"SURESH KUMAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7665111131"},{"branch_id":"1174","branch":"HINDOLI","id_no":"24288","name":"KESHAV GURJAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9602917372"},{"branch_id":"1175","branch":"NAINWA","id_no":"23635","name":"YOGESH","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9950213376"},{"branch_id":"1175","branch":"NAINWA","id_no":"24234","name":"SHUBHAM SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7023322566"},{"branch_id":"1175","branch":"NAINWA","id_no":"5668","name":"G SIVA KRISHNA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9116168278"},{"branch_id":"1175","branch":"NAINWA","id_no":"24379","name":"KOMAL DIWAKAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7877926190"},{"branch_id":"1175","branch":"NAINWA","id_no":"24653","name":"POOJA KUMARI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8104651682"},{"branch_id":"1176","branch":"INDERGARH","id_no":"23236","name":"RISHI KESH MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8385861629"},{"branch_id":"1176","branch":"INDERGARH","id_no":"21043","name":"SUMAN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8233924097"},{"branch_id":"1176","branch":"INDERGARH","id_no":"24975","name":"NIDHI SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9680686101"},{"branch_id":"1176","branch":"INDERGARH","id_no":"26205","name":"NIVEDITA MATHUR","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"6377366055"},{"branch_id":"1176","branch":"INDERGARH","id_no":"24659","name":"SAJJANA CHOUDHARY","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8529323731"},{"branch_id":"1177","branch":"BASOLI","id_no":"24273","name":"AANAND KUMAR SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8114470677"},{"branch_id":"1177","branch":"BASOLI","id_no":"20924","name":"RAJENDER SINGH","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9649319338"},{"branch_id":"1177","branch":"BASOLI","id_no":"25440","name":"MUKUT RAJ MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9664185784"},{"branch_id":"1177","branch":"BASOLI","id_no":"24583","name":"SULABH KUMAR SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9782269822"},{"branch_id":"1178","branch":"GENDOLI","id_no":"20797","name":"SUBHASH CHANDRA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080661"},{"branch_id":"1178","branch":"GENDOLI","id_no":"20360","name":"RAMJI LAL MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8955500927"},{"branch_id":"1178","branch":"GENDOLI","id_no":"24739","name":"KAPIL SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9828179459"},{"branch_id":"1178","branch":"GENDOLI","id_no":"22607","name":"VIKASH KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9782201226"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"7204","name":"CHELSI KURRA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257040993"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"20425","name":"GAURAV CHANDRA JOSHI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7737381814"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"24216","name":"SANDEEP KUMAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8381019936"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"25236","name":"SUMAN SINGHADIYA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9351234812"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"22500","name":"PRAVENDRA KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9116607300"},{"branch_id":"1179","branch":"ISHWARNAGAR","id_no":"25757","name":"UTTRA SINGH","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9027922414"},{"branch_id":"1180","branch":"SUWASAN","id_no":"23176","name":"BABULAL KUMAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7388815947"},{"branch_id":"1180","branch":"SUWASAN","id_no":"23769","name":"PRAHLAD GUJAR","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"7073544673"},{"branch_id":"1180","branch":"SUWASAN","id_no":"26197","name":"ASIF KHAN MANSURI","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"6376590256"},{"branch_id":"1180","branch":"SUWASAN","id_no":"21373","name":"SHASHANK SHAKYA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8233152389"},{"branch_id":"1180","branch":"SUWASAN","id_no":"22186","name":"VANDANA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9928496329"},{"branch_id":"1180","branch":"SUWASAN","id_no":"24688","name":"SHIVANI MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9024732282"},{"branch_id":"1180","branch":"SUWASAN","id_no":"21141","name":"KULDEEP MEENA","designation":"","grade":"OFFICER SCALE I","phone":"9216083144"},{"branch_id":"1181","branch":"TALWAS","id_no":"24785","name":"SHYAM SUNDAR PUROHIT","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8696737732"},{"branch_id":"1181","branch":"TALWAS","id_no":"25395","name":"DINESH MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8209554825"},{"branch_id":"1181","branch":"TALWAS","id_no":"22441","name":"MANOJ KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9928193988"},{"branch_id":"1181","branch":"TALWAS","id_no":"25736","name":"GAURAV SINGH SOLANKI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8239063421"},{"branch_id":"1182","branch":"NAYAGAON","id_no":"22726","name":"RAM PRASAD KUMHAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9549543611"},{"branch_id":"1182","branch":"NAYAGAON","id_no":"23723","name":"UDHAV LAL KUMHAR","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9928789708"},{"branch_id":"1182","branch":"NAYAGAON","id_no":"25827","name":"RAJAT MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9982692801"},{"branch_id":"1182","branch":"NAYAGAON","id_no":"24924","name":"KANIKA KATARIYA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7725991838"},{"branch_id":"1183","branch":"SAMEEDHI","id_no":"23487","name":"BHANWAR LAL MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8094472050"},{"branch_id":"1183","branch":"SAMEEDHI","id_no":"25428","name":"DINESH CHANDRA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8007649566"},{"branch_id":"1183","branch":"SAMEEDHI","id_no":"22478","name":"ARYAN SHEKHAWAT","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9414366346"},{"branch_id":"1183","branch":"SAMEEDHI","id_no":"24657","name":"NAND LAL PRAJAPAT","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8690445528"},{"branch_id":"1195","branch":"SATHOOR","id_no":"7164","name":"ABHILASH KHOWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257041365"},{"branch_id":"1195","branch":"SATHOOR","id_no":"24747","name":"MILIND SRIVASTAVA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8854809956"},{"branch_id":"1195","branch":"SATHOOR","id_no":"25585","name":"KRISHNARJUN MISHRA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7999874136"},{"branch_id":"1195","branch":"SATHOOR","id_no":"23720","name":"KAILASH CHANDRA SONI","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"6397801680"},{"branch_id":"1195","branch":"SATHOOR","id_no":"20190","name":"ASHWINI NAYAK","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9216080693"},{"branch_id":"1195","branch":"SATHOOR","id_no":"22524","name":"NITIN SAINI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7372971766"},{"branch_id":"1196","branch":"MATOONDA","id_no":"20424","name":"NARENDRA SHARMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8108933442"},{"branch_id":"1196","branch":"MATOONDA","id_no":"23572","name":"SWATANTRA FOUZDAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8619125484"},{"branch_id":"1196","branch":"MATOONDA","id_no":"23725","name":"VINOD KUMAR SHARMA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9460024832"},{"branch_id":"1196","branch":"MATOONDA","id_no":"22943","name":"JITENDRA KUMAR LOVEVANSHI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8947009907"},{"branch_id":"1196","branch":"MATOONDA","id_no":"24915","name":"CHETAN SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9413820566"},{"branch_id":"1196","branch":"MATOONDA","id_no":"24165","name":"JASVEER SINGH","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9216047253"},{"branch_id":"1201","branch":"AJETA","id_no":"21550","name":"ASHISH MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9530389544"},{"branch_id":"1201","branch":"AJETA","id_no":"23610","name":"KESHAV JAIN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7737955295"},{"branch_id":"1201","branch":"AJETA","id_no":"24618","name":"RAMESH CHAND MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7688849509"},{"branch_id":"1201","branch":"AJETA","id_no":"25069","name":"DINESH SHEORAN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9518122964"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"5524","name":"BHUPENDRA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7742428306"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"5970","name":"MAYARAM MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8690007569"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"23237","name":"MEETHA LAL MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8741092694"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"25312","name":"RUCHIKA VERMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8619644903"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"26188","name":"SRISHTI SAINI","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8824699085"},{"branch_id":"1202","branch":"JAJAWAR","id_no":"22553","name":"ADESH KUMAR SARAN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7014731324"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"20581","name":"SURESH CHAND BAIRWA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9728314210"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"24210","name":"RAHUL KUMAR MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9116694544"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"24912","name":"RAVINA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8949515030"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"20650","name":"MEENAKSHI","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9462567644"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"22459","name":"MUKESH KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9351058822"},{"branch_id":"1203","branch":"SUMERGANJMANDI","id_no":"23071","name":"PAPPU SINGH","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216080665"},{"branch_id":"1204","branch":"NEEM KA KHERA","id_no":"5284","name":"DILEEP KUMARSHARMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9116176370"},{"branch_id":"1204","branch":"NEEM KA KHERA","id_no":"24110","name":"SUNIL KUMAR BHASKAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7014596919"},{"branch_id":"1204","branch":"NEEM KA KHERA","id_no":"25129","name":"SHANTANU MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7852844147"},{"branch_id":"1204","branch":"NEEM KA KHERA","id_no":"22613","name":"RAVINDRA KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9549779380"},{"branch_id":"1210","branch":"DHANESAR","id_no":"22817","name":"RAM LATOOR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9829192638"},{"branch_id":"1210","branch":"DHANESAR","id_no":"21006","name":"UMESH KUMAR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9079933462"},{"branch_id":"1211","branch":"LAMBAKHOH","id_no":"23684","name":"DEEPAK SWAMI","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8107761769"},{"branch_id":"1211","branch":"LAMBAKHOH","id_no":"23813","name":"BILAL SAMI","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9460593481"},{"branch_id":"1211","branch":"LAMBAKHOH","id_no":"24123","name":"ASHUTOSH JAIMAN","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7877287674"},{"branch_id":"1211","branch":"LAMBAKHOH","id_no":"21453","name":"ARIHANT KUMAR JAIN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216083240"},{"branch_id":"1215","branch":"THIKARDA","id_no":"22649","name":"ARPANA PANDEY","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9887009316"},{"branch_id":"1215","branch":"THIKARDA","id_no":"26191","name":"LALITA BARMOLA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9001573065"},{"branch_id":"1215","branch":"THIKARDA","id_no":"26307","name":"PIYUSH MEHTA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8396868899"},{"branch_id":"1215","branch":"THIKARDA","id_no":"24075","name":"RUCHI BANSAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7742463153"},{"branch_id":"1216","branch":"SEELOR","id_no":"4193","name":"MANISH GUPTA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8770939626"},{"branch_id":"1216","branch":"SEELOR","id_no":"24277","name":"JITENDRA SINGH","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9133513096"},{"branch_id":"1216","branch":"SEELOR","id_no":"24899","name":"JAYANT KUMAR SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9001544215"},{"branch_id":"1216","branch":"SEELOR","id_no":"21502","name":"DEEPAK KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8104354641"},{"branch_id":"1216","branch":"SEELOR","id_no":"24162","name":"GOURAV SONI","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"7014734079"},{"branch_id":"1217","branch":"LAKHERI","id_no":"20642","name":"RAJESH KUMAR MEEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9001221678"},{"branch_id":"1217","branch":"LAKHERI","id_no":"24223","name":"RAHUL JANGID","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9610191931"},{"branch_id":"1217","branch":"LAKHERI","id_no":"7233","name":"SAHIL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257040913"},{"branch_id":"1217","branch":"LAKHERI","id_no":"24676","name":"NIKHIL JAGARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9950964500"},{"branch_id":"1217","branch":"LAKHERI","id_no":"26165","name":"SIYA SHARMA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9549104894"},{"branch_id":"1217","branch":"LAKHERI","id_no":"24707","name":"SHUBHAM KUMAR SINGHAL","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"6378060013"},{"branch_id":"1223","branch":"PECH KI BAORI","id_no":"20398","name":"PRAKASH KUMAR MANDAL","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8292712850"},{"branch_id":"1223","branch":"PECH KI BAORI","id_no":"22580","name":"LALIT GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8385998043"},{"branch_id":"1223","branch":"PECH KI BAORI","id_no":"25316","name":"ADITYA PAREWA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8769381743"},{"branch_id":"1223","branch":"PECH KI BAORI","id_no":"22913","name":"RISHABH PANDAY","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9460344714"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"7191","name":"SANGEETA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257041237"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"20434","name":"SUNNY GOYAL","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8410517369"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"21448","name":"ASHUTOSH JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9460814655"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"23351","name":"AKSHAY KUMAR JAIN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9660242813"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"24895","name":"SEEMA KUMARI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9352074644"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"22051","name":"PRIYANKA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9549399638"},{"branch_id":"1224","branch":"GOVINDPUR BAORI","id_no":"25730","name":"ABHISHEK SINGH","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"7007128906"},{"branch_id":"1225","branch":"TEERATH","id_no":"22727","name":"SHIV KUMAR NAMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9829400943"},{"branch_id":"1225","branch":"TEERATH","id_no":"24952","name":"ANJU KUMAWAT","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8529744190"},{"branch_id":"1225","branch":"TEERATH","id_no":"20695","name":"BHUPEN KUMAR SHARMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9829652965"},{"branch_id":"1225","branch":"TEERATH","id_no":"20905","name":"KAVITA BAROLIYA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8107245766"},{"branch_id":"1225","branch":"TEERATH","id_no":"21609","name":"RAKHI SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9982853424"},{"branch_id":"1225","branch":"TEERATH","id_no":"21847","name":"GAURAV CHACHONDIYA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8960919392"},{"branch_id":"1226","branch":"BUNDI","id_no":"7398","name":"DINESH KUMAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9487622690"},{"branch_id":"1226","branch":"BUNDI","id_no":"20089","name":"HEMENDRA BHATT","designation":"BRANCH MANAGER","grade":"OFFICER SCALE IV","phone":"8769064308"},{"branch_id":"1226","branch":"BUNDI","id_no":"23731","name":"PURUSHOTTAM KUMHAR","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"8890049237"},{"branch_id":"1226","branch":"BUNDI","id_no":"23818","name":"ALOK VAISHNAV","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9216356784"},{"branch_id":"1226","branch":"BUNDI","id_no":"24116","name":"JASKOR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8949518112"},{"branch_id":"1226","branch":"BUNDI","id_no":"24309","name":"DEEPIKA AGRAWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7412022857"},{"branch_id":"1226","branch":"BUNDI","id_no":"21852","name":"SANTOSH PATEL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9166050998"},{"branch_id":"1226","branch":"BUNDI","id_no":"22596","name":"PRAMOD GARWA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8003478218"},{"branch_id":"1226","branch":"BUNDI","id_no":"24934","name":"VIKAS PRAJAPATI","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8529480159"},{"branch_id":"1226","branch":"BUNDI","id_no":"21408","name":"RAKESH MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216080651"},{"branch_id":"1226","branch":"BUNDI","id_no":"25914","name":"MANEETA KUMARI MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9636334141"},{"branch_id":"1226","branch":"BUNDI","id_no":"21664","name":"RONAK KUMAR JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9636622007"},{"branch_id":"1229","branch":"TALERA","id_no":"22765","name":"JAGDISH PRASAD GOCHAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9928798013"},{"branch_id":"1229","branch":"TALERA","id_no":"25295","name":"POOJA MAHESHWARI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"6378945274"},{"branch_id":"1229","branch":"TALERA","id_no":"26255","name":"SHUBHAM SHARMA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"7792877020"},{"branch_id":"1229","branch":"TALERA","id_no":"20283","name":"VAIBHAV NANDWANA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7597077358"},{"branch_id":"1229","branch":"TALERA","id_no":"22075","name":"DOLLY MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9602477200"},{"branch_id":"1229","branch":"TALERA","id_no":"22428","name":"ANISHA AGARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8905788178"},{"branch_id":"1230","branch":"KAPREN","id_no":"5343","name":"MADHU BALA RATHORE","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9116176429"},{"branch_id":"1230","branch":"KAPREN","id_no":"20433","name":"HITESH DEWANI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7987042397"},{"branch_id":"1230","branch":"KAPREN","id_no":"24909","name":"SHEETAL KANWAR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7877117875"},{"branch_id":"1230","branch":"KAPREN","id_no":"25025","name":"BHANWAR SINGH HADA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7036279431"},{"branch_id":"1230","branch":"KAPREN","id_no":"22466","name":"RAJESH KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9530007630"},{"branch_id":"1275","branch":"DEI","id_no":"23622","name":"RAHUL BAIRWA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7412952853"},{"branch_id":"1275","branch":"DEI","id_no":"21338","name":"IMRAN ANSARI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080711"},{"branch_id":"1275","branch":"DEI","id_no":"24615","name":"CHETAN ANIL JAMNIK","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9130993714"},{"branch_id":"1275","branch":"DEI","id_no":"25433","name":"DHEERAJ KUMAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9414747488"},{"branch_id":"1275","branch":"DEI","id_no":"24692","name":"AKHLESH KUMAR MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7287701683"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"4548","name":"SUNIL KUMAR GURU","designation":"BRANCH MANAGER","grade":"OFFICER SCALE IV","phone":"7073454924"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"20966","name":"UNDRATHI SUMANJALI","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8106019254"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"23132","name":"INDRAJEET VERMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8561825154"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"24134","name":"ASHA KUMARI MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7891457390"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"24877","name":"RISHIKA KANWAR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9358721763"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"25952","name":"MADHU MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9799104541"},{"branch_id":"1281","branch":"NAINWA ROAD BUNDI","id_no":"24073","name":"PRATIBHA MEENA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7976969644"},{"branch_id":"1297","branch":"RAMGANJ","id_no":"23807","name":"SHUBHAM NAMA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"8094615478"},{"branch_id":"1297","branch":"RAMGANJ","id_no":"24919","name":"SUBHASH RANWA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7891308746"},{"branch_id":"1297","branch":"RAMGANJ","id_no":"25290","name":"SHIVANI GARG","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7412989616"},{"branch_id":"1297","branch":"RAMGANJ","id_no":"22577","name":"AMANDEEP KAUR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7690095313"},{"branch_id":"1297","branch":"RAMGANJ","id_no":"25753","name":"RAJAT KUMAR SAINI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8233625433"},{"branch_id":"1551","branch":"MANDAWARA KTH","id_no":"20694","name":"MAZHAR KHAN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080695"},{"branch_id":"1551","branch":"MANDAWARA KTH","id_no":"23642","name":"BABLU JATOLIYA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7878835357"},{"branch_id":"1551","branch":"MANDAWARA KTH","id_no":"22961","name":"ARVIND MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9001941409"},{"branch_id":"1551","branch":"MANDAWARA KTH","id_no":"25384","name":"PRADEEP MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8955950416"},{"branch_id":"1551","branch":"MANDAWARA KTH","id_no":"24305","name":"ARUN KUMAR GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9079342162"},{"branch_id":"1554","branch":"DHULET","id_no":"23540","name":"MANAN JAIN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9610578781"},{"branch_id":"1554","branch":"DHULET","id_no":"20777","name":"Bhawani Singh Meena","designation":"BRANCH MANAGER","grade":"OFFICER SCLE II","phone":"9216083162"},{"branch_id":"1554","branch":"DHULET","id_no":"26214","name":"VAIBHAV SAINI","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8279218862"},{"branch_id":"1554","branch":"DHULET","id_no":"24475","name":"AKSHIT JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9783376643"},{"branch_id":"1555","branch":"GAINTA","id_no":"23515","name":"SHYAM SUNDER SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9413627576"},{"branch_id":"1555","branch":"GAINTA","id_no":"25421","name":"SUNIL KUMAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8209113132"},{"branch_id":"1555","branch":"GAINTA","id_no":"22786","name":"DINESH KUMAR KUSHWAHA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8107419313"},{"branch_id":"1555","branch":"GAINTA","id_no":"20814","name":"CHIRAG GUPTA","designation":"BRANCH MANAGER","grade":"","phone":"9216083215"},{"branch_id":"1556","branch":"BINAYAKA","id_no":"5628","name":"PRADEEP SONI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9116176623"},{"branch_id":"1556","branch":"BINAYAKA","id_no":"7109","name":"MOHIT GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257041160"},{"branch_id":"1556","branch":"BINAYAKA","id_no":"24070","name":"GUGAN KUMAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9529989963"},{"branch_id":"1556","branch":"BINAYAKA","id_no":"26275","name":"ASHISH VERMA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9694727777"},{"branch_id":"1556","branch":"BINAYAKA","id_no":"22113","name":"AMARDEEP KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8617372983"},{"branch_id":"1557","branch":"AYANA","id_no":"7203","name":"HARISH","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"6367532705"},{"branch_id":"1557","branch":"AYANA","id_no":"21019","name":"SHASHIKANT","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9783798009"},{"branch_id":"1557","branch":"AYANA","id_no":"23597","name":"PRADEEP KUMAR SAINI","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9079361540"},{"branch_id":"1557","branch":"AYANA","id_no":"24918","name":"NEKI RAM SAINI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8619907845"},{"branch_id":"1557","branch":"AYANA","id_no":"22878","name":"VILAS WASUDEO GAWANDE","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9950401540"},{"branch_id":"1559","branch":"JULMI","id_no":"3387","name":"MUKESH DAYMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7073454539"},{"branch_id":"1559","branch":"JULMI","id_no":"23309","name":"MOHAN LAL KUMBHKAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8058581647"},{"branch_id":"1559","branch":"JULMI","id_no":"25726","name":"RISHABH","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9729817144"},{"branch_id":"1559","branch":"JULMI","id_no":"23528","name":"SIKANDAR BAIRWA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9602274576"},{"branch_id":"1559","branch":"JULMI","id_no":"22432","name":"RITIK AGARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"6375506148"},{"branch_id":"1560","branch":"BAPAWAR KALAN","id_no":"22766","name":"MADAN SINGH CHAUHAN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8890410490"},{"branch_id":"1560","branch":"BAPAWAR KALAN","id_no":"20505","name":"HIRDESH KUMAR SIRVAIYA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080673"},{"branch_id":"1560","branch":"BAPAWAR KALAN","id_no":"22873","name":"RAHUL KATOLKAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8269114284"},{"branch_id":"1560","branch":"BAPAWAR KALAN","id_no":"25242","name":"SONALI NAMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9664141262"},{"branch_id":"1560","branch":"BAPAWAR KALAN","id_no":"24341","name":"AYUSH MENDWASHYA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8742087675"},{"branch_id":"1561","branch":"DEOLI","id_no":"21116","name":"MANOJ KUMAR PREMI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7976389367"},{"branch_id":"1561","branch":"DEOLI","id_no":"21425","name":"RAMPHAL MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9414150853"},{"branch_id":"1561","branch":"DEOLI","id_no":"22764","name":"RAM BHAROS MALAV","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9928112996"},{"branch_id":"1561","branch":"DEOLI","id_no":"23660","name":"DEEPIKA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9509963829"},{"branch_id":"1561","branch":"DEOLI","id_no":"22105","name":"ABHISHEK KUMAR SINGH","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7665195683"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"4911","name":"KUSH KAKKAR","designation":"BRANCH MANAGER","grade":"","phone":"9116014429"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"22080","name":"DEEPAK GAUR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8302175583"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"26107","name":"ROSHAN MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9587450803"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"26248","name":"MAYA KUMARI AGRAWAL","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8058423161"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"22516","name":"KUMKUM BANSIWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8955817370"},{"branch_id":"1575","branch":"SEEMALIYA","id_no":"24250","name":"HARIMOHAN BALRAM MEENA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8286632749"},{"branch_id":"1576","branch":"ALNIYA","id_no":"20585","name":"GARVIT AGARWAL","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9929931503"},{"branch_id":"1576","branch":"ALNIYA","id_no":"23021","name":"LOKESH KUMAR MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9680615346"},{"branch_id":"1576","branch":"ALNIYA","id_no":"24384","name":"AMISHA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"6367175120"},{"branch_id":"1576","branch":"ALNIYA","id_no":"25325","name":"DEEPIKA RAJIA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8209952529"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"20692","name":"GAJENDER SINGH NARUKA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9216083126"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"21228","name":"DEEPAK KHANDELWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9584214938"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"23157","name":"JYOTI MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9929252671"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"23157","name":"JYOTI MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9602372357"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"22682","name":"ASHUTOSH DADHICH","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8890911846"},{"branch_id":"1577","branch":"KOTA JUNCTION","id_no":"26442","name":"KIRAN MEENA","designation":"OA MP","grade":"OFFICE ASSISTANT","phone":"6350503544"},{"branch_id":"1579","branch":"ARANDKHERA","id_no":"20359","name":"PYARE LAL MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9829769330"},{"branch_id":"1579","branch":"ARANDKHERA","id_no":"24235","name":"MOHD. REHAN KHAN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8441942219"},{"branch_id":"1579","branch":"ARANDKHERA","id_no":"24956","name":"HANU SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9352402561"},{"branch_id":"1579","branch":"ARANDKHERA","id_no":"21328","name":"YASHWANT SHARMA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9413604007"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"5027","name":"SALONI RATHOR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9773343648"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"26537","name":"HITESH KUMAR SAINI","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8432270553"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"20146","name":"ANURAG CHATURVEDI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9216083242"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"22932","name":"NEHA GOUTTAM","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9571571026"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"23393","name":"DIKSHA SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7300427133"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"25522","name":"ASHUTOSH SAHU","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9026838574"},{"branch_id":"1580","branch":"NAYAPURA KOTA","id_no":"22497","name":"HARSHITA SINGHAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9001812802"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"3451","name":"NEERAJ PALIWAL","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"7073454263"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"4242","name":"JITESH PANCHOLI","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9773343975"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"20045","name":"APURWA SONI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE IV","phone":"9414872009"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"21698","name":"RAHUL KUMAR GARG","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9413350225"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"23820","name":"SOMESH GUPTA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"8302695956"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"24132","name":"DHARMENDRA KUMAR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8019244979"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"25471","name":"KARAN SONI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8058511201"},{"branch_id":"1581","branch":"KESHAVPURA KOTA","id_no":"22869","name":"SNEHAL VINOD POPHARE","designation":"ASSISTANT MANAGER","grade":"","phone":"9694349266"},{"branch_id":"1583","branch":"RAMGANJMANDI","id_no":"20275","name":"BRIJENDRA TRIPATHI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8085057327"},{"branch_id":"1583","branch":"RAMGANJMANDI","id_no":"22824","name":"RAMESH CHAND RATHORE","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9784783082"},{"branch_id":"1583","branch":"RAMGANJMANDI","id_no":"23761","name":"KALU LAL SUMAN","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"6377528623"},{"branch_id":"1583","branch":"RAMGANJMANDI","id_no":"25235","name":"ANUSHKA RAJAWAT","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7014437826"},{"branch_id":"1583","branch":"RAMGANJMANDI","id_no":"21560","name":"ANURAG MEGHWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8560842662"},{"branch_id":"1584","branch":"CHECHAT","id_no":"22820","name":"RAMESHWAR KUMAR PATWA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9251721005"},{"branch_id":"1584","branch":"CHECHAT","id_no":"20568","name":"AVADHESH BAIRWA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9001480397"},{"branch_id":"1584","branch":"CHECHAT","id_no":"25134","name":"DHARMENDRA KUMAR SINGH","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9065732027"},{"branch_id":"1584","branch":"CHECHAT","id_no":"24662","name":"AABHASH AGARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9785578391"},{"branch_id":"1591","branch":"BAMBORI DABAR","id_no":"20617","name":"VIPUL SHARMA","designation":"BRANCH MANAGER","grade":"OFFCIER SCALE III","phone":"9216080635"},{"branch_id":"1591","branch":"BAMBORI DABAR","id_no":"25353","name":"NITESH MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9680491268"},{"branch_id":"1591","branch":"BAMBORI DABAR","id_no":"20670","name":"BHAROSI LAL BAIRWA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"7877739554"},{"branch_id":"1594","branch":"MOIKALAN","id_no":"20352","name":"DEEPAK VERMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7742858609"},{"branch_id":"1594","branch":"MOIKALAN","id_no":"22755","name":"RAMESHWAR PRASAD SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9680728191"},{"branch_id":"1594","branch":"MOIKALAN","id_no":"25462","name":"CHIRAG MITTAL","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8289030901"},{"branch_id":"1594","branch":"MOIKALAN","id_no":"22334","name":"SAMIR GAJANAN LONARE","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216080497"},{"branch_id":"1597","branch":"GIRDHARPURA","id_no":"20206","name":"NAVNEET YADUVANSHI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9799401687"},{"branch_id":"1597","branch":"GIRDHARPURA","id_no":"25492","name":"KAJAL SINGH NARUKA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8302625049"},{"branch_id":"1597","branch":"GIRDHARPURA","id_no":"26349","name":"SEEMA KUMARI MEENA","designation":"OFFICE ASSISTANT","grade":"OFFICE ASSISTANT","phone":"8824515466"},{"branch_id":"1597","branch":"GIRDHARPURA","id_no":"22156","name":"KRASHNA KUMARI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7296843428"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"23434","name":"SHWETA AGRAWAL","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8769548440"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"26104","name":"RENUKA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8949288824"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"26358","name":"MUSKAN NAMDEV","designation":"OA MP","grade":"OFFICE ASSISTANT","phone":"8871107298"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"25043","name":"MD NAZEEM ANSARI","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8962406031"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"4707","name":"MANISH AGRAWAL","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9116014211"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"21460","name":"MAMTA GUPTA","designation":"ASSISTANT MANAGER","grade":"Officer Scale I","phone":"9216083255"},{"branch_id":"1598","branch":"BHAMA SHAH MANDI","id_no":"22595","name":"MANISHA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7976500838"},{"branch_id":"1599","branch":"BHANDAHEDA","id_no":"20236","name":"SONU GARG","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7015306558"},{"branch_id":"1599","branch":"BHANDAHEDA","id_no":"25204","name":"PRAGYA GOYAL","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7737705556"},{"branch_id":"1599","branch":"BHANDAHEDA","id_no":"21877","name":"OMPRAKASH DEHRIYA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216080656"},{"branch_id":"1599","branch":"BHANDAHEDA","id_no":"26127","name":"AKHILESH DWIVEDI","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8764345399"},{"branch_id":"1599","branch":"BHANDAHEDA","id_no":"25679","name":"PRIYANKA SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9509070137"},{"branch_id":"1601","branch":"BUDADEET","id_no":"23208","name":"SHUBHAM GAUTAM","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9610041881"},{"branch_id":"1601","branch":"BUDADEET","id_no":"23751","name":"DHARAMRAJ MEENA","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9929048582"},{"branch_id":"1601","branch":"BUDADEET","id_no":"20967","name":"PRADEEP VERMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7737529094"},{"branch_id":"1601","branch":"BUDADEET","id_no":"24376","name":"KHUSHIRAM MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9468832336"},{"branch_id":"1601","branch":"BUDADEET","id_no":"26292","name":"HARIKESH BAIRWA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8302808084"},{"branch_id":"1601","branch":"BUDADEET","id_no":"24671","name":"DEEPAK PAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9351427418"},{"branch_id":"1604","branch":"NIMODA HARIJI","id_no":"22668","name":"SATYA NARAYAN SAINI","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9784286044"},{"branch_id":"1604","branch":"NIMODA HARIJI","id_no":"23685","name":"SANDEEP BAIRWA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9079663667"},{"branch_id":"1604","branch":"NIMODA HARIJI","id_no":"20951","name":"SUSHREE SANGEETA JENA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8280227151"},{"branch_id":"1604","branch":"NIMODA HARIJI","id_no":"26160","name":"LAXMI SHARMA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8306973571"},{"branch_id":"1604","branch":"NIMODA HARIJI","id_no":"24365","name":"VINAY","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8221042940"},{"branch_id":"1605","branch":"KUNDANPUR","id_no":"20780","name":"VIVEK KUMAR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080958"},{"branch_id":"1605","branch":"KUNDANPUR","id_no":"25872","name":"RAMAWATAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9672162357"},{"branch_id":"1605","branch":"KUNDANPUR","id_no":"26159","name":"HEMANT JANGID","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9116947838"},{"branch_id":"1605","branch":"KUNDANPUR","id_no":"21810","name":"LOKESH KUMAR SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216083186"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"23757","name":"PARMANAND GOCHAR","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9351912811"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"23315","name":"RAVI GATHALA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9166621261"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"25328","name":"VIKAS KUMAR REWAR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9531890008"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"24301","name":"RITIK SINGHAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9521491286"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"26279","name":"AAKASH JATAV","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8005789574"},{"branch_id":"1608","branch":"KAMOLAR","id_no":"25671","name":"ARVIND MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9929197906"},{"branch_id":"1613","branch":"KHEDA RASULPUR","id_no":"20260","name":"RAJESH KUMAR BAIRWA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7742702245"},{"branch_id":"1613","branch":"KHEDA RASULPUR","id_no":"20725","name":"ANIL KUMAR BHATIA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9413512048"},{"branch_id":"1613","branch":"KHEDA RASULPUR","id_no":"22767","name":"SHAUKAT KHAN","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9413731235"},{"branch_id":"1613","branch":"KHEDA RASULPUR","id_no":"26392","name":"RITU SHAKYA","designation":"OA MP","grade":"OFFICE ASSISTANT","phone":"8118896612"},{"branch_id":"1613","branch":"KHEDA RASULPUR","id_no":"21287","name":"DEEKSHA SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9358910203"},{"branch_id":"1614","branch":"LUHAWAD","id_no":"24921","name":"SACHIN BENIWAL","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8000205374"},{"branch_id":"1614","branch":"LUHAWAD","id_no":"24282","name":"SHAHIL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9694507292"},{"branch_id":"1614","branch":"LUHAWAD","id_no":"26167","name":"YASH","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9694853897"},{"branch_id":"1614","branch":"LUHAWAD","id_no":"24923","name":"PRAVINDER KUMAR MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9571536491"},{"branch_id":"1617","branch":"SANGOD","id_no":"22870","name":"K SUNILKUMAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9959061646"},{"branch_id":"1617","branch":"SANGOD","id_no":"23773","name":"SULOCHANA GAUR","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9784672166"},{"branch_id":"1617","branch":"SANGOD","id_no":"24086","name":"SURYA PRAKASH SAINI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9694855762"},{"branch_id":"1617","branch":"SANGOD","id_no":"7111","name":"RAJESH NITHARWAL","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257041161"},{"branch_id":"1617","branch":"SANGOD","id_no":"20443","name":"YATENDRA RATHORE","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9928183155"},{"branch_id":"1617","branch":"SANGOD","id_no":"25486","name":"ASHOK JANGID","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8005624653"},{"branch_id":"1617","branch":"SANGOD","id_no":"24683","name":"YOGESH KUMAR MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7728005920"},{"branch_id":"1617","branch":"SANGOD","id_no":"24251","name":"ANKUSH SHARMA","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"8278772343"},{"branch_id":"1618","branch":"KARWAD","id_no":"23518","name":"SURESH CHAND GURJAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8233151023"},{"branch_id":"1618","branch":"KARWAD","id_no":"25422","name":"HIMANSHU MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7891338429"},{"branch_id":"1618","branch":"KARWAD","id_no":"24364","name":"SONU","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9467010044"},{"branch_id":"1618","branch":"KARWAD","id_no":"26067","name":"SUNIL KUMAR BAIRWA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216083824"},{"branch_id":"1624","branch":"KHAIRABAD","id_no":"4923","name":"YOGENDRA KUMAR DAYA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9116168243"},{"branch_id":"1624","branch":"KHAIRABAD","id_no":"23652","name":"KAMLESH KUMAR SAKSENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"6005744616"},{"branch_id":"1624","branch":"KHAIRABAD","id_no":"25344","name":"SAPNA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9257206345"},{"branch_id":"1624","branch":"KHAIRABAD","id_no":"21970","name":"VIJAY KUMAR LAXKAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7568163012"},{"branch_id":"1624","branch":"KHAIRABAD","id_no":"25681","name":"YAMINI SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9571681558"},{"branch_id":"1627","branch":"ITAWA","id_no":"20277","name":"ATUL KUMAR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"8934918289"},{"branch_id":"1627","branch":"ITAWA","id_no":"22558","name":"SUNIL KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9649632681"},{"branch_id":"1627","branch":"ITAWA","id_no":"22956","name":"VIKASH KUMAR BUNKER","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9928487473"},{"branch_id":"1627","branch":"ITAWA","id_no":"23672","name":"ROHIT PARALIYA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7014255728"},{"branch_id":"1627","branch":"ITAWA","id_no":"25424","name":"KAPIL DOBWAL","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9785849010"},{"branch_id":"1627","branch":"ITAWA","id_no":"22237","name":"SHIV RAJ PRAJAPAT","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9216080562"},{"branch_id":"1627","branch":"ITAWA","id_no":"25722","name":"SIDDHANT RAJPUT","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9720922030"},{"branch_id":"1631","branch":"SULTANPUR","id_no":"22754","name":"GYARSI RAM SHRANGI","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9462531162"},{"branch_id":"1631","branch":"SULTANPUR","id_no":"25003","name":"VARSHITA CHANDOLIA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8058607255"},{"branch_id":"1631","branch":"SULTANPUR","id_no":"20228","name":"SUNIL KUMAR RAMAN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9460549197"},{"branch_id":"1631","branch":"SULTANPUR","id_no":"22030","name":"SONAL JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7014706770"},{"branch_id":"1631","branch":"SULTANPUR","id_no":"24681","name":"VAIBHAV SHARMA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9887414517"},{"branch_id":"1632","branch":"TATHED","id_no":"24712","name":"REENA SINGHAL","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8619863478"},{"branch_id":"1632","branch":"TATHED","id_no":"25389","name":"MANISHA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9694616239"},{"branch_id":"1632","branch":"TATHED","id_no":"20845","name":"NAYAN SHARMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216080712"},{"branch_id":"1632","branch":"TATHED","id_no":"22494","name":"TRIPTI JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7014575325"},{"branch_id":"1633","branch":"DHABADEH","id_no":"22819","name":"LADDU LAL PANCHAL","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9928462451"},{"branch_id":"1633","branch":"DHABADEH","id_no":"25523","name":"ARJUN KUMAR DHAKER","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9549920065"},{"branch_id":"1637","branch":"KAITHOON","id_no":"20995","name":"NARESH SHARMA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9660472612"},{"branch_id":"1637","branch":"KAITHOON","id_no":"23134","name":"PRADEEP KUMAR MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9772311100"},{"branch_id":"1637","branch":"KAITHOON","id_no":"25261","name":"PARVEEN BANO","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7665636995"},{"branch_id":"1637","branch":"KAITHOON","id_no":"26276","name":"DEEPAK KUMAR CHOUCHAN","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8000084377"},{"branch_id":"1637","branch":"KAITHOON","id_no":"22505","name":"BHAVANA RAGHAV","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7878622712"},{"branch_id":"1638","branch":"KANWAS","id_no":"22758","name":"DEVI SHANKAR PARETA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9829136083"},{"branch_id":"1638","branch":"KANWAS","id_no":"25202","name":"GURPREET KAUR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9079153024"},{"branch_id":"1638","branch":"KANWAS","id_no":"20954","name":"ADISH AKRAM","designation":"Branch MANAGER","grade":"OFFICER SCALE II","phone":"8089533296"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"20844","name":"SUMEET CHOUHAN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9993668533"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"21851","name":"VAIBHAV AGNIHOTRI","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8094302277"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"22892","name":"MURLI PRASAD MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9649850750"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"25273","name":"NIKITA AGRAWAL","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8824332256"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"25356","name":"VANDANA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9521025274"},{"branch_id":"1642","branch":"ANANTPURA","id_no":"22614","name":"SHAKUNTALA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"6376618441"},{"branch_id":"1646","branch":"DADABARI KOTA","id_no":"20138","name":"MANISH RATHOR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"7737991476"},{"branch_id":"1646","branch":"DADABARI KOTA","id_no":"24111","name":"SAKSHI MANGAL","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7734030228"},{"branch_id":"1646","branch":"DADABARI KOTA","id_no":"21258","name":"ANJU LATA MEENA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9764124497"},{"branch_id":"1646","branch":"DADABARI KOTA","id_no":"25924","name":"SOMNATH SHIVDAS NAGHORE","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9657060872"},{"branch_id":"1646","branch":"DADABARI KOTA","id_no":"24808","name":"SANJAY CHAUDHARY","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"9990833381"},{"branch_id":"1657","branch":"DEHIT","id_no":"26481","name":"AAKASH JANGID","designation":"OFFICE ASSISTANT","grade":"OFFICE ASSISTANT","phone":"9982069528"},{"branch_id":"1670","branch":"LAXMIPURA","id_no":"20586","name":"YOGESH KUMAR MATHURIA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9414506810"},{"branch_id":"1670","branch":"LAXMIPURA","id_no":"26278","name":"MOOL CHAND VERMA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"8890953738"},{"branch_id":"1670","branch":"LAXMIPURA","id_no":"22782","name":"ANIL KUMAR GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCLE I","phone":"9785201791"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"7242","name":"RAHUL PAREWA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9257041167"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"24243","name":"KSHITIJ SINGH","designation":"OFFICE ATTENDANT","grade":"OFFICE ATTENDENT","phone":"9664157190"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"22091","name":"POONAM GARG","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9887161504"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"25425","name":"MEENAKSHEE MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7742991131"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"25493","name":"ASHWIN CHAUHAN","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8360914468"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"22875","name":"RAHUL KASHINATH BIRADE","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9930543591"},{"branch_id":"1679","branch":"BORKHEDA","id_no":"25073","name":"RAHUL NAYAK","designation":"MANAGER","grade":"OFFICER SCALE II","phone":"6371463341"},{"branch_id":"1681","branch":"BADGAON","id_no":"22868","name":"SANJAY GAUTAM SALVE","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9860617414"},{"branch_id":"1681","branch":"BADGAON","id_no":"20693","name":"DEEPAK GUPTA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9407225281"},{"branch_id":"1681","branch":"BADGAON","id_no":"25975","name":"JAYPRAKASH PRASAD","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8292572071"},{"branch_id":"1681","branch":"BADGAON","id_no":"22890","name":"PRAVEEN SINGH TOLIA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9928848289"},{"branch_id":"1700","branch":"RANIPURA","id_no":"23522","name":"RAM LAL MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7665768157"},{"branch_id":"1700","branch":"RANIPURA","id_no":"25980","name":"VIVEKANAND ROY","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7033788010"},{"branch_id":"1700","branch":"RANIPURA","id_no":"26038","name":"NIRAJ KUMAR PATHAK","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9580560052"},{"branch_id":"1701","branch":"KHATAULI","id_no":"21011","name":"YOGENDRA MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8963045493"},{"branch_id":"1701","branch":"KHATAULI","id_no":"26097","name":"NITESH KUMAR MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9116956504"},{"branch_id":"1701","branch":"KHATAULI","id_no":"22584","name":"RAKESH KUMAR DAS","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7976775746"},{"branch_id":"1725","branch":"NANTA","id_no":"5969","name":"MUKESH KUMAR MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9782199773"},{"branch_id":"1725","branch":"NANTA","id_no":"23347","name":"ROOPAL SHARMA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8209434724"},{"branch_id":"1725","branch":"NANTA","id_no":"25496","name":"PRASHANT SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"6350468128"},{"branch_id":"1725","branch":"NANTA","id_no":"22449","name":"VAISHALI GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8829805468"},{"branch_id":"1726","branch":"DIGOD","id_no":"25495","name":"NISHANT SONI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9358380538"},{"branch_id":"1726","branch":"DIGOD","id_no":"21093","name":"KEERTI","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7627015592"},{"branch_id":"1727","branch":"MANDANA","id_no":"20677","name":"DINESH KUMAR PANKAJ","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9252829649"},{"branch_id":"1727","branch":"MANDANA","id_no":"25321","name":"SONU BUNKAR","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7023776199"},{"branch_id":"1727","branch":"MANDANA","id_no":"22369","name":"HIMANI MAHAWAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9694313189"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"20230","name":"SHIKHA JAIN","designation":"BRANCH MANAGER","grade":"OFFICER SCALE III","phone":"9414885616"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"21152","name":"SONAL JAIN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9424789778"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"21744","name":"RICHA SAROYA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9799119980"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"23320","name":"KALPNA KUMARI MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7878008180"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"26421","name":"AMEENA KUMARI MEENA","designation":"OA MP","grade":"OFFICE ASSISTANT","phone":"8529353768"},{"branch_id":"1759","branch":"R.K.PURAM KOTA","id_no":"22219","name":"RAKESH KUMAR SINHA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9673571882"},{"branch_id":"1775","branch":"JAMEETPURA","id_no":"23526","name":"SAITAN SINGH","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"9829298420"},{"branch_id":"1775","branch":"JAMEETPURA","id_no":"21153","name":"VISHAKHA SINGH","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"7014515306"},{"branch_id":"1775","branch":"JAMEETPURA","id_no":"22733","name":"KRISHAN CHANDRA SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7733997335"},{"branch_id":"1775","branch":"JAMEETPURA","id_no":"26016","name":"NIRMLA BISHT","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9568979022"},{"branch_id":"1776","branch":"SUKET","id_no":"23539","name":"PAWAN MALAV","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8279248010"},{"branch_id":"1776","branch":"SUKET","id_no":"26281","name":"VIJESH DOLI","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"7073723972"},{"branch_id":"1776","branch":"SUKET","id_no":"22616","name":"NARESH KUMAR","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8058505482"},{"branch_id":"1776","branch":"SUKET","id_no":"20761","name":"HARKESH MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"9216083252"},{"branch_id":"1802","branch":"GUMANPURA","id_no":"4626","name":"MANJARI SINGH","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8560040009"},{"branch_id":"1802","branch":"GUMANPURA","id_no":"21219","name":"SALMAN KHAN","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"9571525777"},{"branch_id":"1802","branch":"GUMANPURA","id_no":"23376","name":"VIBHAV VIJAY","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8058636804"},{"branch_id":"1802","branch":"GUMANPURA","id_no":"21837","name":"ANKIT SHRIVASTAVA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8696480501"},{"branch_id":"1834","branch":"KURAR","id_no":"21712","name":"DEEPIKA SUTHAR","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"7014100593"},{"branch_id":"1834","branch":"KURAR","id_no":"25214","name":"POOJA SHARMA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8690959969"},{"branch_id":"1834","branch":"KURAR","id_no":"22504","name":"VAISHALI GUPTA","designation":"ASSISTANT MANAGER","grade":"OFFICER SCALE I","phone":"8114487372"},{"branch_id":"1843","branch":"GANESHGANJ","id_no":"22902","name":"SUNIL KUMAR MEENA","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7725955008"},{"branch_id":"1843","branch":"GANESHGANJ","id_no":"26265","name":"RAMAKANT BHINDA","designation":"OA-MP","grade":"OFFICE ASSISTANT","phone":"9587040506"},{"branch_id":"1843","branch":"GANESHGANJ","id_no":"22001","name":"VISHESH KUMAR MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE I","phone":"8949499895"},{"branch_id":"1860","branch":"PEEPALDA KALAN","id_no":"7357","name":"SHRIKANT SAINI","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"7240349396"},{"branch_id":"1860","branch":"PEEPALDA KALAN","id_no":"4806","name":"MANOJ KUMAR MEENA","designation":"BRANCH MANAGER","grade":"","phone":"8890366811"},{"branch_id":"1881","branch":"KISHANPURA TAKIYA","id_no":"22792","name":"CHITRALEKHA DHAKAR","designation":"SCSA CASH","grade":"OFFICE ASSISTANT","phone":"8005842588"},{"branch_id":"1881","branch":"KISHANPURA TAKIYA","id_no":"25958","name":"ARVIND KU MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8696856283"},{"branch_id":"1881","branch":"KISHANPURA TAKIYA","id_no":"20351","name":"RAKESH MEENA","designation":"BRANCH MANAGER","grade":"OFFICER SCALE II","phone":"8740046343"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"4039","name":"NEERAJ KUMAR SHARMA","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"7073454907"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"20170","name":"RAVI KUMAR SHARMA","designation":"AMSH HEAD","grade":"OFFICER SCALE III","phone":"9829689695"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"6148","name":"LAVALI SHARMA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9509317757"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"22132","name":"OM PRAKASH MEENA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"8875484055"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"22140","name":"GEERISH MEENA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9887583308"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"22296","name":"NAGENDRA KUMAR","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7023809299"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"3751","name":"MANISH BANSAL","designation":"OFFCIER SCALE II","grade":"OFFICER SCALE II","phone":"9116168461"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"22975","name":"SANGEETA MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"7790897646"},{"branch_id":"AMSH","branch":"ANANTPURA KOTA AMSH","id_no":"22493","name":"ADITYA SINGHAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7357371626"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"20323","name":"PRABHAKAR GOUTTAM","designation":"AMSH HEAD","grade":"OFFICER SCALE III","phone":"8829922012"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"20849","name":"SURBHI PATHAK","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"8955057644"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"6145","name":"AKANSHA KANSAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7568370330"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"21204","name":"AMIT MITTAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9413546664"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"22109","name":"PRABHAT RANJAN","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"8290105977"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"25945","name":"PAWAN MEENA","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"9829910470"},{"branch_id":"AMSH","branch":"BORKHEDA-KOTA AMSH","id_no":"22442","name":"HARSHIT KUMAR JOSHI","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"7737203631"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"23365","name":"SHIVAM MAHESHWARI","designation":"OA-CSA","grade":"OFFICE ASSISTANT","phone":"8209973319"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"20169","name":"TILAK SINGH YADAV","designation":"Sanction Officer","grade":"OFFICER SCALE III","phone":"9216080288"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"5282","name":"ANKIT GOYAL","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9116176368"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"20263","name":"SAMEER DERASHRI","designation":"AMSH HEAD","grade":"OFFICER SCALE III","phone":"8003490426"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"20908","name":"PRATEEK NAMA","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"9887120153"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"21488","name":"ARPIT MITTAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9602245044"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"21887","name":"GAGAN DADHICH","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9468663344"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"22107","name":"VARUN KUMAR JAYASWAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9717748753"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"22250","name":"VINOD AHIRWAR","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"8269482490"},{"branch_id":"AMSH","branch":"BUNDI MAIN AMSH","id_no":"22356","name":"MAYANK SUMAN","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9529557494"},{"branch_id":"AMSH","branch":"GUMANPURA AMSH","id_no":"4562","name":"BHUPENDRA SINGH RATHORE","designation":"AMSH HEAD","grade":"OFFICER SCALE IV","phone":"9694947852"},{"branch_id":"AMSH","branch":"GUMANPURA AMSH","id_no":"21026","name":"HITESH JAIN","designation":"OFFICER SCALE II","grade":"OFFICER SCALE II","phone":"8441011004"},{"branch_id":"AMSH","branch":"GUMANPURA AMSH","id_no":"6354","name":"NISHANT SHARMA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9773343679"},{"branch_id":"AMSH","branch":"GUMANPURA AMSH","id_no":"22283","name":"HIMANSHU GOYAL","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"9460684743"},{"branch_id":"AMSH","branch":"GUMANPURA AMSH","id_no":"22601","name":"VIJAY KOHARIYA","designation":"OFFICER SCALE I","grade":"OFFICER SCALE I","phone":"8005758513"}]</script>
+
+<script>
+const STAFF_DATA = JSON.parse(document.getElementById('staff-data').textContent);
+const PASSWORD = "rgbkota";
+
+function checkPassword(){
+  const val = document.getElementById('lock-input').value.trim();
+  if(val.toLowerCase() === PASSWORD){
+    document.getElementById('lock-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('lock-error').textContent = 'Incorrect password. Please try again.';
+  }
+}
+document.getElementById('lock-input').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ checkPassword(); }
+});
+
+const PIE_COLORS = ['#0d2340','#c9a24b','#1e8e5a','#3b7bbf','#c0562b','#7a5aa6','#2aa5a0','#8b95a3','#d1b46a'];
+
+function normDesig(d){
+  let x = (d || '').toUpperCase().replace(/\s+/g,' ').trim();
+  x = x.replace('OFFCIER','OFFICER').replace(/^OA MP$/,'OA-MP');
+  return x || 'NOT SPECIFIED';
+}
+
+function renderPie(list,label){
+  const panel = document.getElementById('piePanel');
+  let scope = label || 'All branches';
+  if(!list){ list = STAFF_DATA; scope = 'All branches'; }
+  document.getElementById('pieScope').textContent = scope + ' · ' + list.length + ' staff';
+  if(!list.length){ document.getElementById('pieRow').innerHTML = '<div class="empty-state">No staff</div>'; return; }
+  const counts = {};
+  list.forEach(p => { const k = normDesig(p.designation); counts[k] = (counts[k]||0) + 1; });
+  let items = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  if(items.length > 8){
+    const rest = items.slice(8).reduce((s,i) => s+i[1], 0);
+    items = items.slice(0,8); items.push(['OTHERS', rest]);
+  }
+  const total = list.length, R = 50, C = 60;
+  let svg = '<svg viewBox="0 0 120 120" role="img" aria-label="Staff by designation">';
+  if(items.length === 1){
+    svg += `<circle cx="${C}" cy="${C}" r="${R}" fill="${PIE_COLORS[0]}"/>`;
+  } else {
+    let a0 = -Math.PI/2;
+    items.forEach((it,i) => {
+      const a1 = a0 + (it[1]/total) * 2*Math.PI;
+      const x0 = C + R*Math.cos(a0), y0 = C + R*Math.sin(a0);
+      const x1 = C + R*Math.cos(a1), y1 = C + R*Math.sin(a1);
+      svg += `<path d="M${C} ${C} L${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${(a1-a0) > Math.PI ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${PIE_COLORS[i % PIE_COLORS.length]}" stroke="#fff" stroke-width="1.5"><title>${escapeHtml(it[0])}: ${it[1]}</title></path>`;
+      a0 = a1;
+    });
+  }
+  svg += '</svg>';
+  const legend = items.map((it,i) =>
+    `<div><i style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></i><span class="l">${escapeHtml(it[0])}</span><b>${it[1]}</b></div>`
+  ).join('');
+  document.getElementById('pieRow').innerHTML = svg + `<div class="legend">${legend}<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:5px;color:var(--muted)"><span class="l">Total staff</span><b>${total}</b></div></div>`;
+}
+
+function renderManagers(){
+  const mgrs = STAFF_DATA
+    .filter(p => normDesig(p.designation) === 'BRANCH MANAGER')
+    .sort((a,b) => a.branch.localeCompare(b.branch));
+  document.getElementById('mgrCount').textContent = mgrs.length + ' managers';
+  document.getElementById('managers').innerHTML = '<div class="panel" style="padding:6px 14px">' + mgrs.map(p => {
+    const ok = isValidPhone(p.phone);
+    return `<div class="mgr-row"><div class="mi"><div class="mb">${escapeHtml(p.branch)}</div><div class="mn">${escapeHtml(p.name)}</div></div>` +
+      (ok ? `<a class="mp" href="tel:${p.phone}">&#128222; ${p.phone}</a>` : `<span class="mp off">No Number</span>`) + '</div>';
+  }).join('') + '</div>';
+}
+
+function initApp(){
+  const select = document.getElementById('branchSelect');
+  const branchMap = {};
+  STAFF_DATA.forEach(p => {
+    if(p.branch){
+      if(!(p.branch in branchMap)) branchMap[p.branch] = p.branch_id;
+    }
+  });
+  const branchNames = Object.keys(branchMap).sort();
+  branchNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + ' (ID: ' + branchMap[name] + ')';
+    select.appendChild(opt);
+  });
+  renderManagers();
+  renderPie(null);
+}
+
+function isValidPhone(phone){
+  return /^[6-9]\d{9}$/.test(phone);
+}
+
+function renderPersonCard(p){
+  const validPhone = isValidPhone(p.phone);
+  const phoneDisplay = p.phone && p.phone.length >= 5 ? p.phone : 'N/A';
+  return `
+    <div class="person-card">
+      <div class="person-info">
+        <div class="person-name">${escapeHtml(p.name)}</div>
+        <div class="person-desig">${escapeHtml(p.designation)}${p.grade ? ' &middot; ' + escapeHtml(p.grade) : ''}</div>
+        <div class="person-meta">
+          <span>ID: ${escapeHtml(p.id_no)}</span>
+          <span>Branch: ${escapeHtml(p.branch)}</span>
+          <span>Ph: ${escapeHtml(phoneDisplay)}</span>
+        </div>
+      </div>
+      ${validPhone
+        ? `<a class="call-btn" href="tel:${p.phone}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>Call</a>`
+        : `<span class="call-btn disabled">No Number</span>`
+      }
+    </div>
+  `;
+}
+
+function escapeHtml(str){
+  if(str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function onBranchChange(){
+  const branch = document.getElementById('branchSelect').value;
+  document.getElementById('searchInput').value = '';
+  const titleWrap = document.getElementById('branchTitleWrap');
+  const resultsDiv = document.getElementById('results');
+  const countDiv = document.getElementById('resultCount');
+
+  if(!branch){
+    titleWrap.innerHTML = '';
+    countDiv.textContent = '';
+    resultsDiv.innerHTML = '';
+    renderPie(null);
+    return;
+  }
+
+  const people = STAFF_DATA.filter(p => p.branch === branch);
+  const bid = people.length ? people[0].branch_id : '';
+
+  titleWrap.innerHTML = `
+    <div class="branch-title">
+      <h2>${escapeHtml(branch)}</h2>
+      <span class="bid">Branch ID: ${escapeHtml(bid)}</span>
+    </div>
+  `;
+  countDiv.textContent = people.length + ' staff member(s) found';
+  renderPie(people, branch);
+
+  if(people.length === 0){
+    resultsDiv.innerHTML = '<div class="empty-state">No staff found for this branch.</div>';
+  } else {
+    resultsDiv.innerHTML = people.map(renderPersonCard).join('');
+  }
+}
+
+function onSearch(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const titleWrap = document.getElementById('branchTitleWrap');
+  const resultsDiv = document.getElementById('results');
+  const countDiv = document.getElementById('resultCount');
+
+  if(!q){
+    titleWrap.innerHTML = '';
+    countDiv.textContent = '';
+    resultsDiv.innerHTML = '';
+    document.getElementById('branchSelect').value = '';
+    renderPie(null);
+    return;
+  }
+
+  document.getElementById('branchSelect').value = '';
+
+  const matches = STAFF_DATA.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.id_no.toLowerCase().includes(q)
+  );
+
+  titleWrap.innerHTML = `<div class="branch-title"><h2>Search Results</h2></div>`;
+  countDiv.textContent = matches.length + ' result(s) found for "' + q + '"';
+  renderPie(matches, 'Search results');
+
+  if(matches.length === 0){
+    resultsDiv.innerHTML = '<div class="empty-state">No matching staff found.</div>';
+  } else {
+    resultsDiv.innerHTML = matches.map(renderPersonCard).join('');
+  }
+}
+
+// ---------- RBO Department List popup ----------
+// Blank departments in the source sheet were merged cells; filled from the row above.
+const DEPT_RAW=[
+[3427,"Keshav Kishor Dadhich","SMO","As Per KRA","7073454110"],
+[20116,"Hemant Kumar Kilania","SMB","As Per KRA","9216083140"],
+[20905,"Kavita Baroliya","Manager-in-Charge","HRD, HRMS & PPG Dept.","9216082407"],
+[21258,"Anju Lata","Asst Manager","","9764124497"],
+[5920,"Akshay Meena","Office Assistant","","9643017674"],
+[21335,"Priyanka Choudhary","Asst Manager","PML & RTI Department","9216082486"],
+[21022,"Abhishek Jain","Manager-in-Charge","Planning & Development Dept.","9216082416"],
+[4755,"Renu Gauttam","Manager-in-Charge","Audit & Vigilance Dept.","9116014275"],
+[25912,"Kiran Kumawat","Office Assistant","","9571552082"],
+[4242,"Jitesh Pancholi","Asst Manager-in-Charge","CVE Department","9773343975"],
+[21459,"Arnabh Chatterjee","Asst Manager","","9216082458"],
+[22515,"Kushal Agarwal","Asst Manager-in-Charge","Compliance & Operations Department","9216082355"],
+[21205,"Versha Mehta","Asst Manager","","9216080704"],
+[20791,"Arun Kumar Gupta","Manager","Legal","9216082455"],
+[21477,"Ashutosh Gautam","Asst Manager-in-Charge","Office Administration Security, Premises & Estate Department","9216082459"],
+[20567,"Lokesh Marothia","Manager-in-Charge","Recovery (Asset Management)","9216083130"],
+[21681,"Gaurav Jain","Asst Manager","","9216083134"],
+[22080,"Deepak Gaur","Asst Manager","","9216082325"],
+[22372,"Kuldeep Meena","Asst Manager","Credit Monitoring (CREMON) Department","9216082445"],
+[21820,"Ravi Jain","Asst Manager","","9713100815"],
+[6323,"Aaditya Mehra","Office Assistant","","9636258169"],
+[20931,"Rahul Das","Manager-in-Charge","IT & ADC Department","9539634422"],
+[7408,"Neeraj Dhaka","Asst Manager","","9257041052"],
+[20908,"Prateek Nama","Manager Agri Adv.","Advance Department","9216082372"],
+[21493,"Love Kumar Sharma","Manager Non Agri Adv.","","9216080393"],
+[21244,"Pankaj Yadav","Manager","RMSME","9779082776"],
+[24641,"Rudresh Hada","Manager","","9216047281"],
+[21776,"Manish Meghwal","Asst Manager","CSO","7014859471"],
+[21448,"Ashutosh Jain","Asst Manager","","9460814655"],
+[4585,"Naveen Sharma","Asst Manager-in-Charge","FI Department","9079936431"]
+];
+let _lastDept='';
+const DEPT_STAFF = DEPT_RAW.map((r,i)=>{ if(r[3]) _lastDept=r[3]; return {sn:i+1,id:String(r[0]),name:r[1],des:r[2],dep:r[3]||_lastDept,cug:r[4]}; });
+
+function renderDeptTable(){
+  const q = document.getElementById('deptFilter').value.trim().toLowerCase();
+  const res = DEPT_STAFF.filter(s => !q || [s.name,s.id,s.des,s.dep,s.cug].join(' ').toLowerCase().includes(q));
+  document.getElementById('deptBody').innerHTML = res.map(s =>
+    `<tr><td>${s.sn}</td><td>${escapeHtml(s.id)}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.des)}</td><td>${escapeHtml(s.dep)}</td><td><a href="tel:${escapeHtml(s.cug)}">${escapeHtml(s.cug)}</a></td></tr>`
+  ).join('');
+  document.getElementById('deptCount').textContent = res.length + ' of ' + DEPT_STAFF.length;
+  document.getElementById('deptNone').style.display = res.length ? 'none' : 'block';
+}
+function openDeptList(){
+  document.getElementById('deptFilter').value = '';
+  renderDeptTable();
+  document.getElementById('deptModal').classList.add('open');
+}
+function closeDeptList(){ document.getElementById('deptModal').classList.remove('open'); }
+document.getElementById('deptModal').addEventListener('click', function(e){ if(e.target === this) closeDeptList(); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDeptList(); });
+</script>
+
+</body>
+</html>
